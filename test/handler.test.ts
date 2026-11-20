@@ -53,6 +53,7 @@ const sent: string[] = [];
 vi.mock("@/lib/whatsapp", () => ({
   sendText: async (_to: string, t: string) => { sent.push(t); return true; },
   sendImage: async (_to: string, l: string) => { sent.push("[image]"); return true; },
+  sendReportList: async () => { sent.push("[report-list]"); return true; },
   sendDocument: async () => true,
   markRead: async () => true,
   verifySignature: () => true,
@@ -83,7 +84,9 @@ beforeEach(() => {
 
 describe("full chat flow", () => {
   it("works end to end", async () => {
-    expect(await say("hi")).toContain("expense tracker");
+    const hello = await say("hi");
+    expect(hello).toContain("Hisab On Tip");
+    expect(hello).toContain("Test");
 
     let r = await say("chai paratha 110");
     expect(r).toContain("Chai paratha");
@@ -106,19 +109,19 @@ describe("full chat flow", () => {
 
     expect(await say("budget food 200")).toContain("Budget set");
     r = await say("chai 100");
-    expect(r).toMatch(/exceeded|used/);
+    expect(r).toMatch(/exceeded|used|cross/);
 
     expect(await say("undo")).toContain("Removed");
     expect(await say("balance")).toContain("Left");
 
-    expect(await say("goal laptop 100000")).toContain("Goal created");
+    expect(await say("goal laptop 100000")).toContain("Goal");
     r = await say("save 5000 laptop");
     expect(r).toContain("laptop");
     expect(r).toContain("5%");
     expect(await say("goals")).toContain("laptop");
 
     expect(await say("kal biryani 450")).toContain("Biryani");
-    expect(await say("last 3")).toContain("Recent entries");
+    expect(await say("last 3")).toContain("Recent");
   });
 
   it("dedupes retried webhooks", async () => {
@@ -142,7 +145,7 @@ describe("full chat flow", () => {
     const u = "923222222222";
     await say("chai 50", u);
     expect(await say("delete my data", u)).toContain("confirm");
-    expect(await say("confirm", u)).toContain("deleted");
+    expect(await say("confirm", u)).toMatch(/Saaf|deleted/i);
     expect(store.users.find((x) => x.phone === u)).toBeUndefined();
   });
 
@@ -155,7 +158,7 @@ describe("full chat flow", () => {
   it("garbage gets the help hint", async () => {
     const u = "923444444444";
     await say("hello", u);
-    expect(await say("asdf qwer", u)).toContain("Didn't get that");
+    expect(await say("asdf qwer", u)).toContain("samajh nahi");
   });
 });
 
@@ -180,11 +183,11 @@ describe("voice notes", () => {
     transcriptFor = {};
   });
   it("friendly message when the audio can't be fetched", async () => {
-    expect(await voice("923555555553", "bad")).toContain("voice note");
+    expect(await voice("923555555553", "bad")).toMatch(/Voice|voice/i);
   });
   it("tells the user when voice is switched off", async () => {
     voiceOn = false;
-    expect(await voice("923555555554")).toContain("aren't switched on");
+    expect(await voice("923555555554")).toMatch(/Voice|band/i);
     voiceOn = true;
   });
   it("deleting data cannot be confirmed by voice", async () => {

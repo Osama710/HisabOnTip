@@ -33,6 +33,26 @@ async function post(body: object): Promise<boolean> {
 export const sendText = (to: string, text: string) =>
   post({ to, type: "text", text: { body: text.slice(0, 4000), preview_url: false } });
 
+export type ListRow = { id: string; title: string; description?: string };
+
+/** WhatsApp list picker — good for reports (max 10 rows). */
+export function sendReportList(to: string, body: string, buttonLabel: string, rows: ListRow[]) {
+  const slice = rows.slice(0, 10).map((r) => ({
+    id: r.id.slice(0, 200),
+    title: r.title.slice(0, 24),
+    ...(r.description ? { description: r.description.slice(0, 72) } : {}),
+  }));
+  return post({
+    to,
+    type: "interactive",
+    interactive: {
+      type: "list",
+      body: { text: body.slice(0, 1024) },
+      action: { button: buttonLabel.slice(0, 20), sections: [{ title: "Hisab On Tip", rows: slice }] },
+    },
+  });
+}
+
 export const sendImage = (to: string, link: string, caption?: string) =>
   post({ to, type: "image", image: { link, caption: caption?.slice(0, 1000) } });
 

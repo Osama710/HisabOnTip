@@ -4,7 +4,7 @@ export default function Home() {
   const link = number ? `https://wa.me/${number}?text=hi` : null;
   return (
     <main style={{ maxWidth: 560, margin: "0 auto", padding: "56px 20px" }}>
-      <h1 style={{ fontSize: 32, marginBottom: 8 }}>Track expenses on WhatsApp 💸</h1>
+      <h1 style={{ fontSize: 32, marginBottom: 8 }}>Hisab On Tip 💸</h1>
       <p style={{ fontSize: 18, lineHeight: 1.5 }}>
         No app to install. Just text the bot like you text a friend:
       </p>

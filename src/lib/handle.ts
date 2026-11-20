@@ -9,7 +9,7 @@ import { Command, Lang, ParsedEntry, detectLang, normalize, parseMessage } from 
 import { aggregate, buildSummary, budgetLines } from "./reports";
 import { dateLabel, occurredAt, periodRange, ymdOf } from "./time";
 import { transcribeAudio, voiceEnabled } from "./transcribe";
-import { downloadMedia, markRead, sendDocument, sendImage, sendText } from "./whatsapp";
+import { downloadMedia, markRead, sendDocument, sendImage, sendReportList, sendText } from "./whatsapp";
 
 const MAX_ENTRIES = 15;
 const allowed = () =>
@@ -41,7 +41,12 @@ async function handleMessage(m: any, profileName?: string) {
 
   const { user, isNew } = await getOrCreateUser(phone, profileName);
   const now = new Date();
-  await updateUser(user.id, { last_inbound_at: now.toISOString() });
+  const patch: Parameters<typeof updateUser>[1] = { last_inbound_at: now.toISOString() };
+  if (profileName?.trim() && profileName.trim() !== user.name) {
+    patch.name = profileName.trim();
+    user.name = patch.name;
+  }
+  await updateUser(user.id, patch);
   if (!user.lang && m.type === "text") {
     user.lang = detectLang(m.text?.body ?? "");
     await updateUser(user.id, { lang: user.lang });
@@ -53,6 +58,13 @@ async function handleMessage(m: any, profileName?: string) {
     if (m.type === "audio" && m.audio?.id) {
       await handleVoice(user, String(m.audio.id), isNew, now);
       return;
+    }
+    if (m.type === "interactive") {
+      const id = m.interactive?.button_reply?.id ?? m.interactive?.list_reply?.id;
+      if (id?.startsWith("cmd:")) {
+        await processText(user, lang, id.slice(4), false, now);
+        return;
+      }
     }
     if (m.type !== "text" || !m.text?.body) {
       await sendText(phone, T.unsupported);
@@ -67,6 +79,17 @@ async function handleMessage(m: any, profileName?: string) {
 
 const isConfirm = (s: string) => /^(confirm|confirm delete|yes delete|yes|haan|han|ha|delete|ہاں|جی ہاں)$/.test(s);
 const isCancel = (s: string) => /^(cancel|no|nahi|nahin|نہیں)$/.test(s);
+
+async function sendWelcome(user: User, lang: Lang) {
+  const T = L[lang];
+  await sendText(user.phone, T.welcome(user.name));
+  await sendReportList(user.phone, T.reportListBody, T.reportListBtn, T.reportListRows);
+}
+
+async function sendReportMenu(user: User, lang: Lang) {
+  const T = L[lang];
+  await sendReportList(user.phone, T.reportListBody, T.reportListBtn, T.reportListRows);
+}
 
 async function handleVoice(user: User, mediaId: string, isNew: boolean, now: Date) {
   const T = L[user.lang ?? "en"];
@@ -117,13 +140,14 @@ async function processText(user: User, lang: Lang, text: string, isNew: boolean,
 
   switch (parsed.kind) {
     case "greeting":
-      await sendText(phone, T.welcome);
+      await sendWelcome(user, lang);
       return;
     case "thanks":
       await sendText(phone, "👍");
       return;
     case "unknown":
-      await sendText(phone, isNew ? T.welcome : T.unknown);
+      if (isNew) await sendWelcome(user, lang);
+      else await sendText(phone, T.unknown);
       return;
     case "entries":
       await saveEntries(user, lang, parsed.entries, now);
@@ -210,7 +234,10 @@ async function runCommand(user: User, lang: Lang, c: Command, now: Date) {
   const T = L[lang];
   const phone = user.phone;
   switch (c.cmd) {
-    case "help": return void (await sendText(phone, T.help));
+    case "help":
+      await sendText(phone, T.help(user.name));
+      await sendReportMenu(user, lang);
+      return;
     case "summary": return sendSummary(user, lang, c.period, now);
     case "balance": {
       const r = periodRange("month", now, user.timezone);

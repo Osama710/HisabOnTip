@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "WhatsApp Expense Tracker",
-  description: "Track expenses by chatting on WhatsApp. No app, no signup.",
+  title: "Hisab On Tip",
+  description: "Roz ka hisaab on WhatsApp. Hisab On Tip — no app, no signup.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

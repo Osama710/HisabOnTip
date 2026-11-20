@@ -57,15 +57,19 @@ function customRule(tokens: string[], rules: Rule[]): Rule | undefined {
 const ACCOUNT_SINGLE: Record<string, string> = {
   cash: "Cash", naqd: "Cash", "نقد": "Cash",
   meezan: "Meezan", "میزان": "Meezan",
-  hbl: "HBL", ubl: "UBL", mcb: "MCB", abl: "Allied", allied: "Allied", alfalah: "Alfalah", faysal: "Faysal",
-  askari: "Askari", scb: "Standard Chartered", bop: "BOP", bankislami: "BankIslami",
-  sadapay: "SadaPay", nayapay: "NayaPay", easypaisa: "Easypaisa", jazzcash: "JazzCash",
-  card: "Card", bank: "Bank",
+  hbl: "HBL", ubl: "UBL", mcb: "MCB", nbp: "NBP", abl: "Allied", allied: "Allied", alfalah: "Alfalah", faysal: "Faysal",
+  askari: "Askari", scb: "Standard Chartered", bop: "BOP", bankislami: "BankIslami", soneri: "Soneri", samba: "Samba",
+  sadapay: "SadaPay", nayapay: "NayaPay", easypaisa: "Easypaisa", jazzcash: "JazzCash", upaisa: "Upaisa",
+  card: "Card", bank: "Bank", fwbl: "FWBL", js: "JS Bank", jsbank: "JS Bank", summit: "Summit", silk: "Silk Bank",
+  silkbank: "Silk Bank", dib: "Dubai Islamic", khushhali: "Khushhali", kbl: "Khushhali", apna: "Apna",
 };
 const ACCOUNT_PAIR: Record<string, string> = {
   "credit card": "Credit card", "debit card": "Card", "bank alfalah": "Alfalah", "habib bank": "HBL",
   "habib metro": "Habib Metro", "bank islami": "BankIslami", "standard chartered": "Standard Chartered",
   "meezan bank": "Meezan", "easy paisa": "Easypaisa", "jazz cash": "JazzCash", "sada pay": "SadaPay", "naya pay": "NayaPay",
+  "bank al habib": "Bank Al Habib", "al habib": "Bank Al Habib", "national bank": "NBP", "js bank": "JS Bank",
+  "dubai islamic": "Dubai Islamic", "silk bank": "Silk Bank", "summit bank": "Summit", "soneri bank": "Soneri",
+  "first women": "FWBL", "ztbl": "ZTBL", "apna bank": "Apna", "habib metro bank": "Habib Metro",
 };
 
 /** Which payment account (cash, a bank, a wallet) is mentioned, and which token indexes to drop from the note. */

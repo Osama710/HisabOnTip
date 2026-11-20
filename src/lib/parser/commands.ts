@@ -48,6 +48,7 @@ const LANG_MAP: Record<string, Lang> = {
 export function matchCommand(norm: string): Command | null {
   const text = norm.replace(/^[\/!.]+/, "").trim();
   if (!text) return null;
+  if (text === "lastmonth") return { cmd: "summary", period: "lastmonth" };
   const toks = tokenize(text);
   if (!toks.length) return null;
   const hasDigit = /\d/.test(text);
