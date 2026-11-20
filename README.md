@@ -1,7 +1,7 @@
 # WhatsApp Expense Tracker
 
 Text a WhatsApp number like `chai paratha 110` and it logs the expense. English, Urdu script and Roman Urdu all work.
-Stack: Next.js (App Router) on Vercel + Supabase + Meta WhatsApp Cloud API + QuickChart. All free for personal use.
+Stack: Next.js (App Router) on Vercel + Neon Postgres + Meta WhatsApp Cloud API + QuickChart. All free for personal use.
 
 ## What it does
 
@@ -19,10 +19,10 @@ Stack: Next.js (App Router) on Vercel + Supabase + Meta WhatsApp Cloud API + Qui
 
 ## Setup checklist (about 30-45 minutes)
 
-### 1. Supabase
-1. Create a project at supabase.com (free).
-2. SQL Editor > paste all of `supabase/schema.sql` > Run.
-3. Project Settings > API: copy the **Project URL** and the **service_role** key.
+### 1. Database (Neon, free)
+1. Create an account at neon.com and a new project. Pick the AWS region closest to you (Singapore works well from Pakistan).
+2. Open **SQL Editor**, paste all of `db/schema.sql`, and Run.
+3. Click **Connect**, tick "Connection pooling", and copy the connection string. That is `DATABASE_URL`. Keep it secret: it is the only key to your data.
 
 ### 2. Meta WhatsApp Cloud API
 1. developers.facebook.com > Create App > type **Business** > add the **WhatsApp** product.
@@ -59,11 +59,6 @@ Send `hi` to the test number from your phone. You should get the welcome message
 
 Accounts understood: cash, Meezan, HBL, UBL, MCB, Allied, Alfalah, Faysal, Askari, Standard Chartered, BOP, BankIslami, SadaPay, NayaPay, Easypaisa, JazzCash, card / debit card / credit card, bank. If one account is named in a message it applies to every entry in that message. `credit card bill 20000` is treated as a loan payment, not as "paid with credit card".
 
-Already ran an older `schema.sql`? Run this once in the Supabase SQL editor:
-```sql
-alter table transactions add column if not exists account text;
-```
-
 ## Troubleshooting
 
 | Problem | Check |
@@ -72,7 +67,7 @@ alter table transactions add column if not exists account text;
 | No reply at all | Vercel > Logs for `/api/webhook`; confirm `messages` is subscribed; confirm your number is in the allowed recipients list |
 | 401 in logs | `META_APP_SECRET` wrong. It must be the App secret, not the token |
 | "whatsapp send failed 401/190" | Token expired. Use the System User permanent token |
-| Replies work but nothing saves | `SUPABASE_SERVICE_ROLE_KEY` wrong, or schema.sql not run |
+| Replies work but nothing saves | `DATABASE_URL` wrong, or `db/schema.sql` not run in Neon. Check Vercel logs |
 | No charts | QuickChart unreachable or rate limited; text summaries still work |
 | Voice note gets "aren't switched on" | `GEMINI_API_KEY` missing on Vercel, or you did not redeploy |
 | Voice note "couldn't understand" | Check Vercel logs for `transcribe failed`; wrong model name in `GEMINI_MODEL`, or quota hit |
@@ -93,7 +88,7 @@ alter table transactions add column if not exists account text;
 
 ```bash
 npm install
-npm test          # parser + full chat-flow tests (no network needed)
+npm test          # parser, chat flow and SQL tests (no network or accounts needed)
 npm run typecheck
 npm run dev
 ```
@@ -109,7 +104,7 @@ src/lib/parser/                  numbers, dates, categories, commands (the brain
 src/lib/handle.ts                message orchestrator
 src/lib/reports.ts               aggregation, summary text, QuickChart charts
 src/lib/i18n.ts                  English / Roman Urdu / Urdu replies
-src/lib/db.ts                    Supabase access
-supabase/schema.sql              database schema
-tests/                           parser and end-to-end tests
+src/lib/db.ts + pg.ts            Postgres access (plain parameterised SQL)
+db/schema.sql              database schema
+tests/                           parser, chat-flow and database tests (database tests run on a real in-memory Postgres)
 ```
