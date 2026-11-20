@@ -1,5 +1,5 @@
 import {
-  Tx, User, addRule, claimMessage, deleteGoal, deleteUser, fetchTx, getOrCreateUser, goalSavedMap, insertTx, lastTx,
+  Tx, User, addRule, claimMessage, deleteGoal, deleteUser, ensureUserInbound, fetchTx, goalSavedMap, insertTx, lastTx,
   listBudgets, listGoals, listRules, removeBudget, setBudget, softDelete, updateTxAmount, updateUser, upsertGoal,
 } from "./db";
 import { exportUrl } from "./export-link";
@@ -39,14 +39,8 @@ async function handleMessage(m: any, profileName?: string) {
   if (!(await claimMessage(m.id))) return;
   void markRead(m.id);
 
-  const { user, isNew } = await getOrCreateUser(phone, profileName);
   const now = new Date();
-  const patch: Parameters<typeof updateUser>[1] = { last_inbound_at: now.toISOString() };
-  if (profileName?.trim() && profileName.trim() !== user.name) {
-    patch.name = profileName.trim();
-    user.name = patch.name;
-  }
-  await updateUser(user.id, patch);
+  const { user, isNew } = await ensureUserInbound(phone, profileName?.trim(), now);
   const lang: Lang = user.lang ?? "ro";
   const T = L[lang];
 
@@ -96,7 +90,7 @@ async function sendLanguagePicker(user: User) {
 async function sendWelcome(user: User, lang: Lang) {
   const T = L[lang];
   await sendText(user.phone, T.welcome(user.name));
-  await sendReportList(user.phone, T.reportListBody, T.reportListBtn, T.reportListRows);
+  // Report menu on demand (*report* / *help*) — saves a second WhatsApp API call on hi.
 }
 
 async function sendReportMenu(user: User, lang: Lang) {
@@ -291,6 +285,9 @@ async function runCommand(user: User, lang: Lang, c: Command, now: Date) {
       return;
     case "report_menu":
       await sendReportMenu(user, lang);
+      return;
+    case "lang_menu":
+      await sendLanguagePicker(user);
       return;
     case "summary": return sendSummary(user, lang, c.period, now);
     case "language":

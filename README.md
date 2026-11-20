@@ -255,6 +255,7 @@ Optional: `NEXT_PUBLIC_WA_NUMBER=923xxxxxxxxx` for the landing page WhatsApp but
 | Daily report missing | You must message within **24h** (WhatsApp rule) |
 | Meta “Hello World” only | Dashboard test template — user must send **`hi`** for real onboarding |
 | Name stuck as +1 (555) | **Test number profile is locked** — save contact as “Hisab On Tip”; real number for display name |
+| Replies slow (3–8s) | **Vercel cold start** + Meta API; `hi` is one message — type **`report`** for the menu. Neon **pooled** URL in a nearby region |
 
 ---
 

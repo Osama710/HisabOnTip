@@ -8,11 +8,13 @@ export function money(n: number): string {
   return "Rs " + r.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
-export function firstName(name?: string | null): string | null {
+/** Full WhatsApp profile name (trimmed), capped so greetings stay readable. */
+export function displayName(name?: string | null): string | null {
   if (!name?.trim()) return null;
-  const f = name.trim().split(/\s+/)[0];
-  if (f.length < 2) return null;
-  return f.length > 24 ? f.slice(0, 24) : f;
+  const full = name.trim().replace(/\s+/g, " ");
+  if (full.length < 2) return null;
+  const max = 48;
+  return full.length > max ? full.slice(0, max - 1) + "…" : full;
 }
 
 function salute(name: string | null, withName: string, without: string) {
@@ -21,7 +23,7 @@ function salute(name: string | null, withName: string, without: string) {
 
 /** Shown before language is chosen — neutral Roman Urdu + English. */
 export function langPickerIntro(name?: string | null): string {
-  const n = firstName(name);
+  const n = displayName(name);
   const hi = salute(n, "Assalam o Alaikum, {name}! 👋", "Assalam o Alaikum! 👋");
   return (
     `${hi}\n\n` +
@@ -66,7 +68,7 @@ const PAY_HELP = paymentHelpBlocks();
 
 const en: Strings = {
   welcome: (name) => {
-    const n = firstName(name);
+    const n = displayName(name);
     const hi = salute(n, "Assalam o Alaikum, {name}! ✨", "Assalam o Alaikum! ✨");
     return (
       `${hi}\n` +
@@ -82,11 +84,12 @@ const en: Strings = {
       `*Quick keys:*\n` +
       `• *report* → charts & summary\n` +
       `• *help* → full guide\n` +
-      `• *balance* · *undo* · *today*`
+      `• *balance* · *undo* · *today*\n` +
+      `• *zaban* → language buttons`
     );
   },
   help: (name) => {
-    const n = firstName(name);
+    const n = displayName(name);
     const head = n ? `${BRAND} · ${n}` : BRAND;
     return (
       `📖 *${head}*\n\n` +
@@ -144,7 +147,7 @@ const en: Strings = {
 
 const ro: Strings = {
   welcome: (name) => {
-    const n = firstName(name);
+    const n = displayName(name);
     const hi = salute(n, "Assalam o Alaikum, {name}! ✨", "Assalam o Alaikum! ✨");
     return (
       `${hi}\n` +
@@ -160,11 +163,12 @@ const ro: Strings = {
       `*Yad rakhein:*\n` +
       `• *report* → charts\n` +
       `• *help* → guide\n` +
-      `• *balance* · *undo* · *aaj*`
+      `• *balance* · *undo* · *aaj*\n` +
+      `• *zaban* → language buttons`
     );
   },
   help: (name) => {
-    const n = firstName(name);
+    const n = displayName(name);
     const head = n ? `${BRAND} · ${n}` : BRAND;
     return (
       `📖 *${head}*\n\n` +
@@ -220,7 +224,7 @@ const ro: Strings = {
 
 const ur: Strings = {
   welcome: (name) => {
-    const n = firstName(name);
+    const n = displayName(name);
     const hi = salute(n, "السلام علیکم، {name}! ✨", "السلام علیکم! ✨");
     return (
       `${hi}\n` +
@@ -236,7 +240,7 @@ const ur: Strings = {
     );
   },
   help: (name) => {
-    const n = firstName(name);
+    const n = displayName(name);
     const head = n ? `${BRAND} · ${n}` : BRAND;
     return `📖 *${head}*\n\n*report* · today · undo · budget\n\n${PAY_HELP}`;
   },

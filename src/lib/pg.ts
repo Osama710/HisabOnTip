@@ -11,7 +11,8 @@ function client() {
       max: 1, // serverless: one connection per instance, Neon's pooler does the rest
       prepare: false, // required for pooled (PgBouncer) connection strings
       idle_timeout: 20,
-      connect_timeout: 15,
+      connect_timeout: 10,
+      fetch_types: false, // slightly less work on hot path
     });
   }
   return sql;

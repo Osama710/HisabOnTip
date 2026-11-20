@@ -8,6 +8,7 @@ export type Lang = "en" | "ro" | "ur";
 export type Command =
   | { cmd: "help" }
   | { cmd: "report_menu" }
+  | { cmd: "lang_menu" }
   | { cmd: "summary"; period: Period }
   | { cmd: "balance" }
   | { cmd: "undo" }
@@ -59,6 +60,7 @@ export function matchCommand(norm: string): Command | null {
   }
   if (/^(help|madad|commands|menu|\?|guide|how to use|kaise use karun|مدد)$/.test(text)) return { cmd: "help" };
   if (/^(report|reports|hisab|hisaab|kharcha report|statement)$/.test(text)) return { cmd: "report_menu" };
+  if (/^(zaban|زبان|change language|language menu)$/.test(text)) return { cmd: "lang_menu" };
 
   if (LANG_MAP[text]) return { cmd: "language", lang: LANG_MAP[text] };
   let m = /^(?:language|lang|zaban|زبان)\s+(.+)$/.exec(text);

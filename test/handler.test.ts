@@ -16,6 +16,17 @@ vi.mock("@/lib/db", () => ({
     store.users.push(u);
     return { user: { ...u }, isNew: true };
   },
+  ensureUserInbound: async (phone: string, name?: string, at = new Date()) => {
+    let u = store.users.find((x) => x.phone === phone);
+    if (u) {
+      if (name) u.name = name;
+      u.last_inbound_at = at.toISOString();
+      return { user: { ...u }, isNew: false };
+    }
+    u = { id: id(), phone, name: name ?? null, lang: null, timezone: "Asia/Karachi", daily_report: true, last_inbound_at: at.toISOString(), pending_action: null, pending_at: null };
+    store.users.push(u);
+    return { user: { ...u }, isNew: true };
+  },
   updateUser: async (uid: string, patch: any) => Object.assign(store.users.find((u) => u.id === uid)!, patch),
   deleteUser: async (uid: string) => {
     store.users = store.users.filter((u) => u.id !== uid);

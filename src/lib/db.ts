@@ -45,6 +45,28 @@ export async function getOrCreateUser(phone: string, name?: string): Promise<{ u
   return { user: toUser(found[0]), isNew: false };
 }
 
+/** One round trip: create if needed, refresh name + last_inbound_at on every message. */
+export async function ensureUserInbound(
+  phone: string,
+  name: string | undefined,
+  lastInbound: Date
+): Promise<{ user: User; isNew: boolean }> {
+  const rows = await q(
+    `with prior as (select 1 as ok from users where phone = $1)
+     insert into users (phone, name, last_inbound_at) values ($1, $2, $3::timestamptz)
+     on conflict (phone) do update set
+       last_inbound_at = excluded.last_inbound_at,
+       name = case when excluded.name is not null and excluded.name <> '' then excluded.name else users.name end
+     returning *,
+       (not exists (select 1 from prior)) as is_new`,
+    [phone, name ?? null, lastInbound.toISOString()]
+  );
+  const r = rows[0] as any;
+  const isNew = !!r?.is_new;
+  const { is_new: _, ...rest } = r ?? {};
+  return { user: toUser(rest), isNew };
+}
+
 const USER_COLS = new Set(["name", "lang", "timezone", "daily_report", "last_inbound_at", "pending_action", "pending_at"]);
 export async function updateUser(id: string, patch: Partial<Omit<User, "id" | "phone">>) {
   const keys = Object.keys(patch).filter((k) => USER_COLS.has(k));
