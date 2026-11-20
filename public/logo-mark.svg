@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Hisab On Tip">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d9488"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#042f2e" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <!-- Chat tail (WhatsApp-adjacent, subtle) -->
+  <path d="M380 400c24 28 56 44 92 52v24c-52-8-96-36-128-76l36 0z" fill="#14b8a6" opacity="0.45"/>
+  <!-- Ledger card -->
+  <rect x="96" y="108" width="272" height="296" rx="28" fill="#f0fdfa" filter="url(#s)"/>
+  <!-- Lines = expense rows -->
+  <rect x="132" y="168" width="168" height="18" rx="9" fill="#0f766e" opacity="0.85"/>
+  <rect x="132" y="214" width="200" height="18" rx="9" fill="#0f766e" opacity="0.55"/>
+  <rect x="132" y="260" width="136" height="18" rx="9" fill="#0f766e" opacity="0.4"/>
+  <!-- Coin + Rs hint -->
+  <circle cx="328" cy="316" r="52" fill="#25D366"/>
+  <text x="328" y="336" text-anchor="middle" fill="#fff" font-family="Segoe UI, system-ui, sans-serif" font-size="44" font-weight="800">Rs</text>
+</svg>

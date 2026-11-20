@@ -53,6 +53,21 @@ export function sendReportList(to: string, body: string, buttonLabel: string, ro
   });
 }
 
+export type ReplyBtn = { id: string; title: string };
+
+/** Up to 3 quick-reply buttons (language pick, etc.). */
+export function sendButtonMessage(to: string, body: string, buttons: ReplyBtn[]) {
+  const btns = buttons.slice(0, 3).map((b) => ({
+    type: "reply" as const,
+    reply: { id: b.id.slice(0, 256), title: b.title.slice(0, 20) },
+  }));
+  return post({
+    to,
+    type: "interactive",
+    interactive: { type: "button", body: { text: body.slice(0, 1024) }, action: { buttons: btns } },
+  });
+}
+
 export const sendImage = (to: string, link: string, caption?: string) =>
   post({ to, type: "image", image: { link, caption: caption?.slice(0, 1000) } });
 

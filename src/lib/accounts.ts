@@ -34,3 +34,20 @@ export const PAYMENT_LABELS = [
 export function paymentLabelsLine(): string {
   return PAYMENT_LABELS.join(", ");
 }
+
+/** Short welcome hint — full list lives in *help*. */
+export function paymentWelcomeHint(): string {
+  return (
+    "• cash, meezan, hbl, easypaisa, jazzcash\n" +
+    "• Full bank/wallet list → type *help*"
+  );
+}
+
+/** Grouped list for help text (readable on WhatsApp). */
+export function paymentHelpBlocks(): string {
+  return [
+    "*Cash & cards* — cash, card",
+    "*Banks* — Meezan, HBL, UBL, MCB, NBP, Alfalah, Faysal, Askari, Allied, Bank Al Habib, Habib Metro, BankIslami, BOP, Soneri, JS, Dubai Islamic, Silk, Summit, Samba, FWBL, Khushhali, SCB",
+    "*Wallets* — Easypaisa, JazzCash, SadaPay, NayaPay, Upaisa",
+  ].join("\n");
+}

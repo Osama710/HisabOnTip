@@ -1,5 +1,5 @@
 import type { Lang } from "./parser";
-import { paymentLabelsLine } from "./accounts";
+import { paymentHelpBlocks, paymentWelcomeHint } from "./accounts";
 
 export const BRAND = "Hisab On Tip";
 
@@ -8,7 +8,6 @@ export function money(n: number): string {
   return "Rs " + r.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
-/** First word of WhatsApp profile name for a warmer greeting. */
 export function firstName(name?: string | null): string | null {
   if (!name?.trim()) return null;
   const f = name.trim().split(/\s+/)[0];
@@ -19,6 +18,25 @@ export function firstName(name?: string | null): string | null {
 function salute(name: string | null, withName: string, without: string) {
   return name ? withName.replace("{name}", name) : without;
 }
+
+/** Shown before language is chosen — neutral Roman Urdu + English. */
+export function langPickerIntro(name?: string | null): string {
+  const n = firstName(name);
+  const hi = salute(n, "Assalam o Alaikum, {name}! 👋", "Assalam o Alaikum! 👋");
+  return (
+    `${hi}\n\n` +
+    `*${BRAND}* 💸\n` +
+    `Roz ka kharcha, seedha WhatsApp pe — no app, no forms.\n\n` +
+    `Pehle apni *zaban* choose karein 👇\n` +
+    `(Pick your language)`
+  );
+}
+
+export const LANG_BUTTONS = [
+  { id: "lang:en", title: "English" },
+  { id: "lang:ro", title: "Roman Urdu" },
+  { id: "lang:ur", title: "اردو" },
+] as const;
 
 export type ReportRow = { id: string; title: string; description?: string };
 
@@ -43,49 +61,59 @@ type Strings = {
   lastHeader: string; topCats: string; byAccount: string; voiceFail: string; voiceOff: string;
 };
 
-const PAY = paymentLabelsLine();
+const PAY_HINT = paymentWelcomeHint();
+const PAY_HELP = paymentHelpBlocks();
 
 const en: Strings = {
   welcome: (name) => {
     const n = firstName(name);
-    const hi = salute(n, "Assalam o Alaikum, {name}! 👋", "Assalam o Alaikum! 👋");
+    const hi = salute(n, "Assalam o Alaikum, {name}! ✨", "Assalam o Alaikum! ✨");
     return (
-      `${hi}\n\n` +
-      `Welcome to *${BRAND}* — roz ka hisaab, seedha WhatsApp pe.\n\n` +
-      `Bas likho jitna kharcha:\n` +
-      `chai 50 · petrol 2000 · salary 150000\n` +
-      `do cheezain ek message: chai 40 aur rickshaw 200\n\n` +
-      `Kis se pay kiya? Aakhir mein likh dein:\n` +
-      `petrol 2000 meezan · chai 50 cash\n\n` +
-      `*Banks & wallets:* ${PAY}\n\n` +
-      `🎙️ Voice note bhi chalega. Reports ke liye neeche wala menu kholo, ya *help* likho.`
+      `${hi}\n` +
+      `*${BRAND}* — your daily money diary on WhatsApp.\n\n` +
+      `*Log kharcha (just type):*\n` +
+      `• chai 50\n` +
+      `• petrol 2000\n` +
+      `• salary 150000\n` +
+      `• chai 40 aur rickshaw 200 (2 in 1 msg)\n\n` +
+      `*Paid from?* End pe likho:\n` +
+      `${PAY_HINT}\n\n` +
+      `🎙️ Voice notes work too.\n\n` +
+      `*Quick keys:*\n` +
+      `• *report* → charts & summary\n` +
+      `• *help* → full guide\n` +
+      `• *balance* · *undo* · *today*`
     );
   },
   help: (name) => {
     const n = firstName(name);
-    const head = n ? `${BRAND} — madad for ${n}` : `${BRAND} — quick help`;
+    const head = n ? `${BRAND} · ${n}` : BRAND;
     return (
       `📖 *${head}*\n\n` +
-      `*Log:* chai 110 | petrol 2k | salary 150k | kal biryani 450\n` +
-      `*Save:* save 5000 laptop\n` +
-      `*Reports:* menu below, or type today / week / month\n` +
-      `*Balance:* balance · *Undo:* undo · *Last:* last 5\n` +
-      `*Budget:* budget food 20000 · *Goals:* goal laptop 100000\n` +
-      `*Payment tag:* petrol 2000 easypaisa (end of message)\n` +
-      `*Accounts:* ${PAY}\n` +
-      `*Zaban:* urdu · roman · english\n` +
-      `*Privacy:* delete my data`
+      `*Add*\n` +
+      `• chai 110 · petrol 2k · kal biryani 450\n` +
+      `• save 5000 laptop\n\n` +
+      `*Reports*\n` +
+      `• Type *report* or pick from menu\n` +
+      `• today · week · month · balance\n\n` +
+      `*Fix*\n` +
+      `• undo · edit 120 · last 5\n\n` +
+      `*Plans*\n` +
+      `• budget food 20000 · goal laptop 100000\n\n` +
+      `*Payment tags*\n${PAY_HELP}\n\n` +
+      `*Language* — english · urdu · roman\n` +
+      `*Privacy* — delete my data`
     );
   },
-  reportListBody: "Choose a report — charts aa jayenge jahan data ho.",
-  reportListBtn: "Pick report",
+  reportListBody: "📊 Tap a report — text + charts jahan data ho.",
+  reportListBtn: "Reports",
   reportListRows: [
     { id: "cmd:today", title: "Today", description: "Aaj ka kharcha" },
-    { id: "cmd:week", title: "This week", description: "Last 7 days" },
+    { id: "cmd:week", title: "This week", description: "7 days" },
     { id: "cmd:month", title: "This month", description: "Is mahine" },
     { id: "cmd:lastmonth", title: "Last month", description: "Pichla mahina" },
-    { id: "cmd:balance", title: "Balance", description: "Income minus spend" },
-    { id: "cmd:help", title: "Full help", description: "All commands" },
+    { id: "cmd:balance", title: "Balance", description: "Kitna bacha" },
+    { id: "cmd:help", title: "Help", description: "Saari commands" },
   ],
   periods: { today: "Today", yesterday: "Yesterday", week: "Last 7 days", month: "This month", lastmonth: "Last month" },
   income: "Income", expenses: "Expenses", saved: "Saved", left: "Left",
@@ -93,58 +121,68 @@ const en: Strings = {
   totalsLine: (t, m) => `Today: ${t} | Month: ${m}`,
   leftMonth: "Left this month",
   undone: (l) => `↩️ Removed: ${l}`, nothingToUndo: "Nothing to undo.", edited: (l) => `✏️ Updated: ${l}`,
-  unknown: `Hmm, samajh nahi aaya 🤔 Try chai 50 ya petrol 2000. *help* for more — ${BRAND}`,
-  unsupported: "Sirf text aur voice notes please 🙏",
-  error: "Thori si gadbad ho gayi. Ek minute baad dobara try karein.",
-  tooMany: (n) => `Ek message mein max ${n} entries. Baqi alag message mein bhej dein.`,
-  budgetSet: (c, a) => `🎯 Budget set: ${c} ${a}/month`, budgetRemoved: (c) => `Budget removed: ${c}`,
-  budgetNone: "Abhi koi budget nahi. Try: budget food 20000", budgetHeader: "🎯 Budgets (this month)",
-  budgetWarn: (c, p) => `⚠️ ${c} — ${p}% used`, budgetOver: (c) => `🚨 ${c} budget cross ho gaya`, budgetMissing: (c) => `No budget for ${c}.`,
-  goalCreated: (n, t) => `🏦 Goal: ${n} (${t}). Add: save 5000 ${n}`,
-  goalNone: "No goals yet. Try: goal laptop 100000", goalHeader: "🏦 Savings goals", goalRemoved: (n) => `Goal removed: ${n}`,
-  goalMissing: (n) => `No goal named ${n}.`, goalTip: "Goal chahiye? goal laptop 100000",
-  ruleLearned: (k, c) => `👍 Theek — ab "${k}" → ${c}`, langSet: "Language: English ✅",
-  reportOn: "Roz ka summary on ✅", reportOff: "Daily summary off. Ab bhi today / week / month type kar sakte ho.",
-  exportEmpty: "File nahi bani. Dobara try karo.", exportCaption: `${BRAND} — your CSV`,
-  deleteAsk: "⚠️ SAARA data delete hoga. 10 min mein *confirm* likho, warna kuch aur likho to cancel.",
-  deleteDone: `Sab saaf. Dobara start: hi likho — ${BRAND}`, deleteCancelled: "Cancel. Kuch delete nahi hua.",
-  nudge: `Aaj abhi kuch log nahi kiya? Chai 50 jaisa kuch bhej do — ${BRAND}`,
+  unknown: `Didn't catch that 🤔\nTry *chai 50* or *report*\n*help* — ${BRAND}`,
+  unsupported: "Text ya voice note bhejein please 🙏",
+  error: "Choti si error — 1 min baad try karein.",
+  tooMany: (n) => `Max ${n} entries per message. Baqi alag message.`,
+  budgetSet: (c, a) => `🎯 Budget: ${c} ${a}/month`, budgetRemoved: (c) => `Budget removed: ${c}`,
+  budgetNone: "No budgets yet → budget food 20000", budgetHeader: "🎯 Budgets (this month)",
+  budgetWarn: (c, p) => `⚠️ ${c} — ${p}% used`, budgetOver: (c) => `🚨 ${c} budget cross`, budgetMissing: (c) => `No budget for ${c}.`,
+  goalCreated: (n, t) => `🏦 Goal: ${n} (${t})`,
+  goalNone: "No goals → goal laptop 100000", goalHeader: "🏦 Savings goals", goalRemoved: (n) => `Removed: ${n}`,
+  goalMissing: (n) => `No goal: ${n}.`, goalTip: "Tip → goal laptop 100000",
+  ruleLearned: (k, c) => `👍 "${k}" → ${c}`, langSet: "English set ✅",
+  reportOn: "Daily summary on ✅", reportOff: "Daily summary off. *report* still works.",
+  exportEmpty: "File nahi bani.", exportCaption: `${BRAND} CSV`,
+  deleteAsk: "⚠️ ALL data delete. 10 min mein *confirm*.",
+  deleteDone: `Data cleared. Say *hi* — ${BRAND}`, deleteCancelled: "Cancelled ✅",
+  nudge: `Aaj kuch log nahi kiya? chai 50? — ${BRAND}`,
   lastHeader: "🧾 Recent", topCats: "Top categories", byAccount: "By account",
-  voiceFail: "Voice clear nahi aayi 🎙️ Dobara bolo ya type kar do (chai 50).",
-  voiceOff: "Voice abhi band hai — type kar dein.",
+  voiceFail: "Voice clear nahi 🎙️ Dobara ya type karo (chai 50).",
+  voiceOff: "Voice off — type kar dein.",
 };
 
 const ro: Strings = {
   welcome: (name) => {
     const n = firstName(name);
-    const hi = salute(n, "Assalam o Alaikum, {name}! 👋", "Assalam o Alaikum! 👋");
+    const hi = salute(n, "Assalam o Alaikum, {name}! ✨", "Assalam o Alaikum! ✨");
     return (
-      `${hi}\n\n` +
-      `*${BRAND}* pe khush amdeed — roz ka hisaab, seedha WhatsApp pe.\n\n` +
-      `Bas likho:\n` +
-      `chai 50 · petrol 2000 · salary 150000\n` +
-      `chai 40 aur rickshaw 200\n\n` +
-      `Kis se diya? Akhir mein: petrol 2000 meezan · chai 50 cash\n\n` +
-      `*Banks & wallets:* ${PAY}\n\n` +
-      `🎙️ Voice note bhi chalta hai. Reports ke liye neeche menu, ya *help*.`
+      `${hi}\n` +
+      `*${BRAND}* — roz ka hisaab, seedha WhatsApp pe.\n\n` +
+      `*Kharcha likho:*\n` +
+      `• chai 50\n` +
+      `• petrol 2000\n` +
+      `• salary 150000\n` +
+      `• chai 40 aur rickshaw 200\n\n` +
+      `*Kis se pay?* Aakhir mein:\n` +
+      `${PAY_HINT}\n\n` +
+      `🎙️ Voice note bhi.\n\n` +
+      `*Yad rakhein:*\n` +
+      `• *report* → charts\n` +
+      `• *help* → guide\n` +
+      `• *balance* · *undo* · *aaj*`
     );
   },
   help: (name) => {
     const n = firstName(name);
-    const head = n ? `${BRAND} — ${n} ke liye` : `${BRAND} — madad`;
+    const head = n ? `${BRAND} · ${n}` : BRAND;
     return (
       `📖 *${head}*\n\n` +
-      `*Likho:* chai 110 | petrol 2k | salary 150k\n` +
-      `*Bachat:* save 5000 laptop\n` +
-      `*Report:* menu neeche, ya aaj / week / month\n` +
-      `*Balance:* balance · *Undo:* undo · *Last:* last 5\n` +
-      `*Budget:* budget food 20000 · *Goals:* goal laptop 100000\n` +
-      `*Account:* petrol 2000 jazzcash\n` +
-      `*${PAY}*\n` +
-      `*Zaban:* urdu · roman · english · delete my data`
+      `*Likho*\n` +
+      `• chai 110 · petrol 2k · kal biryani 450\n` +
+      `• save 5000 laptop\n\n` +
+      `*Report*\n` +
+      `• *report* likho ya menu\n` +
+      `• aaj · week · month · balance\n\n` +
+      `*Theek*\n` +
+      `• undo · edit 120 · last 5\n\n` +
+      `*Budget / goals*\n` +
+      `• budget food 20000 · goal laptop 100000\n\n` +
+      `*Payment*\n${PAY_HELP}\n\n` +
+      `*Zaban* english · urdu · roman`
     );
   },
-  reportListBody: "Report choose karein — jahan data ho wahan chart bhi.",
+  reportListBody: "📊 Report choose karein.",
   reportListBtn: "Report",
   reportListRows: [
     { id: "cmd:today", title: "Aaj", description: "Aaj ka kharcha" },
@@ -152,94 +190,89 @@ const ro: Strings = {
     { id: "cmd:month", title: "Mahina", description: "Is mahine" },
     { id: "cmd:lastmonth", title: "Pichla mahina", description: "Last month" },
     { id: "cmd:balance", title: "Balance", description: "Kitna bacha" },
-    { id: "cmd:help", title: "Madad", description: "Saari commands" },
+    { id: "cmd:help", title: "Madad", description: "Commands" },
   ],
   periods: { today: "Aaj", yesterday: "Kal", week: "Pichle 7 din", month: "Is mahine", lastmonth: "Pichla mahina" },
   income: "Aamdan", expenses: "Kharcha", saved: "Bachat", left: "Bacha",
-  noData: "Is arsay ki koi entry nahi.",
+  noData: "Is arsay ki entry nahi.",
   totalsLine: (t, m) => `Aaj: ${t} | Mahina: ${m}`,
   leftMonth: "Is mahine bacha",
-  undone: (l) => `↩️ Hata diya: ${l}`, nothingToUndo: "Kuch hatane ko nahi.", edited: (l) => `✏️ Theek: ${l}`,
-  unknown: `Samajh nahi aaya 🤔 chai 50 try karo. *help* — ${BRAND}`,
-  unsupported: "Sirf text ya voice note 🙏",
-  error: "Thori gadbad. Thori der baad dobara.",
-  tooMany: (n) => `Ek message mein ${n} entries max.`,
-  budgetSet: (c, a) => `🎯 Budget: ${c} ${a}/mahina`, budgetRemoved: (c) => `Budget hata: ${c}`,
-  budgetNone: "Budget nahi. Likho: budget food 20000", budgetHeader: "🎯 Budgets (is mahine)",
-  budgetWarn: (c, p) => `⚠️ ${c} — ${p}%`, budgetOver: (c) => `🚨 ${c} cross`, budgetMissing: (c) => `${c} budget nahi.`,
-  goalCreated: (n, t) => `🏦 Goal: ${n} (${t})`,
-  goalNone: "Goal nahi. goal laptop 100000", goalHeader: "🏦 Goals", goalRemoved: (n) => `Goal hata: ${n}`,
-  goalMissing: (n) => `Goal ${n} nahi mila.`, goalTip: "goal laptop 100000",
-  ruleLearned: (k, c) => `👍 "${k}" ab ${c}`, langSet: "Zaban Roman Urdu ✅",
-  reportOn: "Roz summary on ✅", reportOff: "Roz summary off. Aaj / week / month phir bhi.",
-  exportEmpty: "File nahi bani.", exportCaption: `${BRAND} CSV`,
-  deleteAsk: "⚠️ SAARA data delete. 10 min mein *confirm*.",
-  deleteDone: "Saaf. Dobara: hi", deleteCancelled: "Cancel.",
-  nudge: `Aaj kuch log kiya? chai 50 — ${BRAND}`,
-  lastHeader: "🧾 Haal ki", topCats: "Zyada kharcha", byAccount: "Account se",
-  voiceFail: "Voice samajh nahi aayi 🎙️", voiceOff: "Voice band — type kar dein.",
+  undone: (l) => `↩️ Hata diya: ${l}`, nothingToUndo: "Kuch nahi.", edited: (l) => `✏️ ${l}`,
+  unknown: `Samajh nahi aaya 🤔 *chai 50* ya *report* — ${BRAND}`,
+  unsupported: "Text ya voice 🙏",
+  error: "Thori der baad dobara.",
+  tooMany: (n) => `Max ${n} per message.`,
+  budgetSet: (c, a) => `🎯 ${c} ${a}/mahina`, budgetRemoved: (c) => `Hata: ${c}`,
+  budgetNone: "budget food 20000", budgetHeader: "🎯 Budgets",
+  budgetWarn: (c, p) => `⚠️ ${c} ${p}%`, budgetOver: (c) => `🚨 ${c}`, budgetMissing: (c) => c,
+  goalCreated: (n, t) => `🏦 ${n} (${t})`,
+  goalNone: "goal laptop 100000", goalHeader: "🏦 Goals", goalRemoved: (n) => n,
+  goalMissing: (n) => n, goalTip: "goal laptop 100000",
+  ruleLearned: (k, c) => `👍 ${k} → ${c}`, langSet: "Roman Urdu ✅",
+  reportOn: "Roz summary on ✅", reportOff: "Roz summary off.",
+  exportEmpty: "File fail", exportCaption: BRAND,
+  deleteAsk: "⚠️ *confirm* 10 min",
+  deleteDone: "hi likho", deleteCancelled: "Cancel",
+  nudge: `Aaj kuch? — ${BRAND}`,
+  lastHeader: "🧾 Recent", topCats: "Categories", byAccount: "Account",
+  voiceFail: "Voice fail 🎙️", voiceOff: "Voice band",
 };
 
 const ur: Strings = {
   welcome: (name) => {
     const n = firstName(name);
-    const hi = salute(n, "السلام علیکم، {name}! 👋", "السلام علیکم! 👋");
+    const hi = salute(n, "السلام علیکم، {name}! ✨", "السلام علیکم! ✨");
     return (
-      `${hi}\n\n` +
-      `*${BRAND}* میں خوش آمدید — روزانہ حساب، براہِ راست واٹس ایپ پر۔\n\n` +
-      `لکھیں:\n` +
-      `چائے 50 · پیٹرول 2000 · تنخواہ 150000\n\n` +
-      `ادائیگی کہاں سے؟ آخر میں: petrol 2000 meezan\n\n` +
-      `*بینک و والیٹ:* ${PAY}\n\n` +
-      `🎙️ وائس نوٹ بھی۔ رپورٹ کے لیے نیچے والا مینو یا *help*۔`
+      `${hi}\n` +
+      `*${BRAND}* — روزانہ خرچ، واٹس ایپ پر۔\n\n` +
+      `*لکھیں:*\n` +
+      `• چائے 50\n` +
+      `• پیٹرول 2000\n` +
+      `• تنخواہ 150000\n\n` +
+      `*ادائیگی:* آخر میں meezan / cash / easypaisa\n` +
+      `• مکمل فہرست → *help*\n\n` +
+      `🎙️ وائس نوٹ\n\n` +
+      `• *report* · *help* · *balance*`
     );
   },
   help: (name) => {
     const n = firstName(name);
-    const head = n ? `${BRAND} — ${n}` : BRAND;
-    return (
-      `📖 *${head}*\n\n` +
-      `*اندراج:* چائے 110 | پیٹرول 2k\n` +
-      `*رپورٹ:* مینو یا today / week / month\n` +
-      `*بیلنس:* balance · *واپس:* undo\n` +
-      `*بجٹ:* budget food 20000\n` +
-      `*اکاؤنٹ:* ${PAY}\n` +
-      `*زبان:* urdu · roman · english`
-    );
+    const head = n ? `${BRAND} · ${n}` : BRAND;
+    return `📖 *${head}*\n\n*report* · today · undo · budget\n\n${PAY_HELP}`;
   },
-  reportListBody: "رپورٹ منتخب کریں۔",
+  reportListBody: "📊 رپورٹ منتخب کریں",
   reportListBtn: "رپورٹ",
   reportListRows: [
     { id: "cmd:today", title: "آج", description: "آج کا خرچ" },
     { id: "cmd:week", title: "ہفتہ", description: "7 دن" },
     { id: "cmd:month", title: "مہینہ", description: "اس مہینے" },
-    { id: "cmd:balance", title: "بیلنس", description: "باقی رقم" },
-    { id: "cmd:help", title: "مدد", description: "تمام کمانڈز" },
+    { id: "cmd:balance", title: "بیلنس", description: "باقی" },
+    { id: "cmd:help", title: "مدد", description: "کمانڈز" },
   ],
   periods: { today: "آج", yesterday: "کل", week: "پچھلے 7 دن", month: "اس مہینے", lastmonth: "پچھلا مہینہ" },
   income: "آمدن", expenses: "خرچ", saved: "بچت", left: "باقی",
-  noData: "اس مدت کی کوئی انٹری نہیں۔",
+  noData: "کوئی انٹری نہیں۔",
   totalsLine: (t, m) => `آج: ${t} | مہینہ: ${m}`,
-  leftMonth: "اس مہینے باقی",
-  undone: (l) => `↩️ ہٹا دیا: ${l}`, nothingToUndo: "کوئی انٹری نہیں۔", edited: (l) => `✏️ درست: ${l}`,
+  leftMonth: "باقی",
+  undone: (l) => `↩️ ${l}`, nothingToUndo: "—", edited: (l) => `✏️ ${l}`,
   unknown: `سمجھ نہیں آیا 🤔 ${BRAND}`,
-  unsupported: "صرف ٹیکسٹ یا وائس 🙏",
-  error: "تھوڑی دیر بعد دوبارہ کوشش کریں۔",
-  tooMany: (n) => `ایک میسج میں ${n} انٹریاں۔`,
-  budgetSet: (c, a) => `🎯 بجٹ: ${c} ${a}`, budgetRemoved: (c) => `بجٹ ہٹا`,
-  budgetNone: "budget food 20000", budgetHeader: "🎯 بجٹ",
-  budgetWarn: (c, p) => `⚠️ ${c} ${p}%`, budgetOver: (c) => `🚨 ${c}`, budgetMissing: (c) => `${c}`,
-  goalCreated: (n, t) => `🏦 ${n} (${t})`,
-  goalNone: "goal laptop 100000", goalHeader: "🏦 اہداف", goalRemoved: (n) => n,
-  goalMissing: (n) => n, goalTip: "goal laptop 100000",
-  ruleLearned: (k, c) => `👍 "${k}" → ${c}`, langSet: "اردو ✅",
-  reportOn: "روزانہ خلاصہ آن", reportOff: "روزانہ بند",
-  exportEmpty: "فائل نہیں بنی", exportCaption: BRAND,
-  deleteAsk: "⚠️ *confirm* 10 منٹ میں",
-  deleteDone: "hi لکھیں", deleteCancelled: "منسوخ",
-  nudge: `آج کچھ درج کریں — ${BRAND}`,
-  lastHeader: "🧾 حالیہ", topCats: "زمرے", byAccount: "اکاؤنٹ",
-  voiceFail: "وائس سمجھ نہیں آئی", voiceOff: "وائس بند",
+  unsupported: "ٹیکسٹ یا وائس 🙏",
+  error: "دوبارہ کوشش کریں۔",
+  tooMany: (n) => `${n} max`,
+  budgetSet: (c, a) => `🎯 ${c}`, budgetRemoved: (c) => c,
+  budgetNone: "budget", budgetHeader: "🎯",
+  budgetWarn: (c, p) => `⚠️ ${p}%`, budgetOver: (c) => `🚨 ${c}`, budgetMissing: (c) => c,
+  goalCreated: (n, t) => `🏦 ${n}`,
+  goalNone: "—", goalHeader: "🏦", goalRemoved: (n) => n,
+  goalMissing: (n) => n, goalTip: "—",
+  ruleLearned: (k, c) => `👍`, langSet: "اردو ✅",
+  reportOn: "آن", reportOff: "بند",
+  exportEmpty: "—", exportCaption: BRAND,
+  deleteAsk: "⚠️ confirm",
+  deleteDone: "hi", deleteCancelled: "—",
+  nudge: BRAND,
+  lastHeader: "🧾", topCats: "—", byAccount: "—",
+  voiceFail: "🎙️", voiceOff: "—",
 };
 
 export const L: Record<Lang, Strings> = { en, ro, ur };

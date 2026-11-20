@@ -3,13 +3,13 @@ import {
   listBudgets, listGoals, listRules, removeBudget, setBudget, softDelete, updateTxAmount, updateUser, upsertGoal,
 } from "./db";
 import { exportUrl } from "./export-link";
-import { L, money } from "./i18n";
+import { LANG_BUTTONS, L, langPickerIntro, money } from "./i18n";
 import { llmParse } from "./llm";
 import { Command, Lang, ParsedEntry, detectLang, normalize, parseMessage } from "./parser";
 import { aggregate, buildSummary, budgetLines } from "./reports";
 import { dateLabel, occurredAt, periodRange, ymdOf } from "./time";
 import { transcribeAudio, voiceEnabled } from "./transcribe";
-import { downloadMedia, markRead, sendDocument, sendImage, sendReportList, sendText } from "./whatsapp";
+import { downloadMedia, markRead, sendButtonMessage, sendDocument, sendImage, sendReportList, sendText } from "./whatsapp";
 
 const MAX_ENTRIES = 15;
 const allowed = () =>
@@ -47,11 +47,7 @@ async function handleMessage(m: any, profileName?: string) {
     user.name = patch.name;
   }
   await updateUser(user.id, patch);
-  if (!user.lang && m.type === "text") {
-    user.lang = detectLang(m.text?.body ?? "");
-    await updateUser(user.id, { lang: user.lang });
-  }
-  const lang: Lang = user.lang ?? "en"; // voice notes from a brand-new user: decided after transcription
+  const lang: Lang = user.lang ?? "ro";
   const T = L[lang];
 
   try {
@@ -61,16 +57,25 @@ async function handleMessage(m: any, profileName?: string) {
     }
     if (m.type === "interactive") {
       const id = m.interactive?.button_reply?.id ?? m.interactive?.list_reply?.id;
+      if (id?.startsWith("lang:")) {
+        const picked = id.slice(5) as Lang;
+        if (picked === "en" || picked === "ro" || picked === "ur") {
+          await updateUser(user.id, { lang: picked });
+          user.lang = picked;
+          await sendWelcome(user, picked);
+        }
+        return;
+      }
       if (id?.startsWith("cmd:")) {
-        await processText(user, lang, id.slice(4), false, now);
+        await processText(user, user.lang ?? "ro", id.slice(4), false, now);
         return;
       }
     }
     if (m.type !== "text" || !m.text?.body) {
-      await sendText(phone, T.unsupported);
+      await sendText(phone, (user.lang ? T : L.ro).unsupported);
       return;
     }
-    await processText(user, lang, String(m.text.body).slice(0, 600), isNew, now);
+    await processText(user, user.lang ?? lang, String(m.text.body).slice(0, 600), isNew, now);
   } catch (e) {
     console.error("process error", e instanceof Error ? e.message : "unknown");
     await sendText(phone, T.error);
@@ -79,6 +84,14 @@ async function handleMessage(m: any, profileName?: string) {
 
 const isConfirm = (s: string) => /^(confirm|confirm delete|yes delete|yes|haan|han|ha|delete|ہاں|جی ہاں)$/.test(s);
 const isCancel = (s: string) => /^(cancel|no|nahi|nahin|نہیں)$/.test(s);
+
+function needsLanguage(user: User) {
+  return user.lang == null;
+}
+
+async function sendLanguagePicker(user: User) {
+  await sendButtonMessage(user.phone, langPickerIntro(user.name), [...LANG_BUTTONS]);
+}
 
 async function sendWelcome(user: User, lang: Lang) {
   const T = L[lang];
@@ -89,6 +102,11 @@ async function sendWelcome(user: User, lang: Lang) {
 async function sendReportMenu(user: User, lang: Lang) {
   const T = L[lang];
   await sendReportList(user.phone, T.reportListBody, T.reportListBtn, T.reportListRows);
+}
+
+async function beginOnboarding(user: User) {
+  if (needsLanguage(user)) await sendLanguagePicker(user);
+  else await sendWelcome(user, user.lang!);
 }
 
 async function handleVoice(user: User, mediaId: string, isNew: boolean, now: Date) {
@@ -112,7 +130,21 @@ async function handleVoice(user: User, mediaId: string, isNew: boolean, now: Dat
 }
 
 async function processText(user: User, lang: Lang, text: string, isNew: boolean, now: Date, viaVoice = false) {
-  const T = L[lang];
+  let activeLang = lang;
+  if (user.lang) activeLang = user.lang;
+  else if (!viaVoice) {
+    const guessed = detectLang(text);
+    if (guessed) {
+      // Only auto-set when they're logging something, not on hi/help
+      const probe = parseMessage(text, { now, tz: user.timezone, rules: [] });
+      if (probe.kind === "entries") {
+        await updateUser(user.id, { lang: guessed });
+        user.lang = guessed;
+        activeLang = guessed;
+      }
+    }
+  }
+  const T = L[activeLang];
   const phone = user.phone;
   const n = normalize(text);
 
@@ -133,6 +165,15 @@ async function processText(user: User, lang: Lang, text: string, isNew: boolean,
   const rules = await listRules(user.id);
   let parsed = parseMessage(text, { now, tz: user.timezone, rules });
 
+  if (needsLanguage(user) && (parsed.kind === "greeting" || (parsed.kind === "unknown" && isNew))) {
+    await beginOnboarding(user);
+    return;
+  }
+  if (needsLanguage(user) && parsed.kind === "command" && parsed.command.cmd === "help") {
+    await sendLanguagePicker(user);
+    return;
+  }
+
   if (parsed.kind === "unknown" && (/\d/.test(text) || /(hazar|hazaar|sau|lakh|ہزار|سو|لاکھ)/i.test(text))) {
     const viaLlm = await llmParse(text);
     if (viaLlm) parsed = { kind: "entries", entries: viaLlm };
@@ -140,20 +181,30 @@ async function processText(user: User, lang: Lang, text: string, isNew: boolean,
 
   switch (parsed.kind) {
     case "greeting":
-      await sendWelcome(user, lang);
+      await beginOnboarding(user);
       return;
     case "thanks":
       await sendText(phone, "👍");
       return;
     case "unknown":
-      if (isNew) await sendWelcome(user, lang);
+      if (isNew && needsLanguage(user)) await sendLanguagePicker(user);
       else await sendText(phone, T.unknown);
       return;
     case "entries":
-      await saveEntries(user, lang, parsed.entries, now);
+      if (needsLanguage(user) && user.lang) {
+        /* lang set above from entry */
+      } else if (needsLanguage(user)) {
+        await sendLanguagePicker(user);
+        return;
+      }
+      await saveEntries(user, activeLang, parsed.entries, now);
       return;
     case "command":
-      await runCommand(user, lang, parsed.command, now);
+      if (needsLanguage(user) && parsed.command.cmd !== "language") {
+        await sendLanguagePicker(user);
+        return;
+      }
+      await runCommand(user, activeLang, parsed.command, now);
       return;
   }
 }
@@ -238,7 +289,15 @@ async function runCommand(user: User, lang: Lang, c: Command, now: Date) {
       await sendText(phone, T.help(user.name));
       await sendReportMenu(user, lang);
       return;
+    case "report_menu":
+      await sendReportMenu(user, lang);
+      return;
     case "summary": return sendSummary(user, lang, c.period, now);
+    case "language":
+      await updateUser(user.id, { lang: c.lang });
+      await sendText(phone, L[c.lang].langSet);
+      await sendWelcome(user, c.lang);
+      return;
     case "balance": {
       const r = periodRange("month", now, user.timezone);
       const agg = aggregate(await fetchTx(user.id, r.from, r.to), user.timezone);
@@ -306,10 +365,6 @@ async function runCommand(user: User, lang: Lang, c: Command, now: Date) {
       const ok = process.env.APP_URL ? await sendDocument(phone, url, name, T.exportCaption) : false;
       if (!ok) await sendText(phone, T.exportEmpty);
       return;
-    }
-    case "language": {
-      await updateUser(user.id, { lang: c.lang });
-      return void (await sendText(phone, L[c.lang].langSet));
     }
     case "report_toggle": {
       await updateUser(user.id, { daily_report: c.on });

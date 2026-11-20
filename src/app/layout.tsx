@@ -4,6 +4,12 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   title: "Hisab On Tip",
   description: "Roz ka hisaab on WhatsApp. Hisab On Tip — no app, no signup.",
+  icons: { icon: "/logo-mark.svg", apple: "/logo-mark-512.png" },
+  openGraph: {
+    title: "Hisab On Tip",
+    description: "Roz ka kharcha, seedha WhatsApp pe.",
+    images: [{ url: "/logo-mark-512.png", width: 640, height: 640, alt: "Hisab On Tip" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
